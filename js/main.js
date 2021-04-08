@@ -22,7 +22,6 @@ ImageData.prototype.getPixel = function(x, y) {
 
 ImageData.prototype.getAdjacent = function(x, y) {
     var adjacent = [];
-    debugger
 
     range(-1, 2).forEach(i => {
         range(-1, 2).forEach(j => {
@@ -41,26 +40,24 @@ ImageData.prototype.getAdjacent = function(x, y) {
     return adjacent;
 }
 
-const setPixel = function(dataArray, x, y) {
-    var offset = ((dataArray.width)*y + x)*4;
-    return {
-        r: this.data[offset+0],
-        g: this.data[offset+1],
-        b: this.data[offset+2],
-        a: this.data[offset+3]
-    }
+function setPixel(imgDataObj, x, y, pixel) {
+    var offset = (Math.ceil(imgDataObj.width*y) + Math.ceil(x))*4;
+    imgDataObj.data[offset+0] = pixel.r;
+    imgDataObj.data[offset+1] = pixel.g;
+    imgDataObj.data[offset+2] = pixel.b;
+    imgDataObj.data[offset+3] = pixel.a;
+    return imgDataObj;
 }
-
 
 function render() {
     // ImageData
     var imgDataObj = ctx.getImageData(0, 0, canvasSize.width, canvasSize.height);
-    var data = imgDataObj.data;
 
-    for (var i=3; i<data.length; i+=4) {
-        if (data[i] > 0) data[i] -= 1
+    // Dim all pixels
+    for (var i=3; i<imgDataObj.data.length; i+=4) {
+        if (imgDataObj.data[i] > 0) imgDataObj.data[i] -= 1
     }
-    ctx.putImageData(new ImageData(data, canvasSize.width), 0, 0);
+    
 
     agents.forEach(agent => {
         // Move agent
@@ -77,10 +74,10 @@ function render() {
         }
 
         // Draw agent
-        agent.draw();
-
-
+        var whitePixel = {r:255,g:255,b:255,a:255};
+        imgDataObj = setPixel(imgDataObj, agent.x, agent.y, whitePixel);
     });
+    ctx.putImageData(imgDataObj, 0, 0);
     requestAnimationFrame(render);
 }
 
