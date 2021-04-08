@@ -52,10 +52,26 @@ function render() {
     // ImageData
     var imgDataObj = ctx.getImageData(0, 0, canvasSize.width, canvasSize.height);
 
-    // Dim all pixels
-    for (var i=3; i<imgDataObj.data.length; i+=4) {
-        if (imgDataObj.data[i] > 0) imgDataObj.data[i] -= 1
-    }
+    // Diffuse values
+    range(0, imgDataObj.width).forEach(x => {
+        range(0, imgDataObj.height).forEach(y => {
+            var current_pixel = imgDataObj.getPixel(x, y);
+            var current_value = current_pixel.a;
+            var surrounding = imgDataObj.getAdjacent(x, y);
+
+            // Get average Alpha-channel of all surrounding points
+            var avg = sum( surrounding.map(pixel => pixel.a) ) /
+                      surrounding.map(pixel => pixel.a).length;
+
+            // Linear Interpolation? Perhaps? Is this correct?
+            var lerp_power = 0.5;
+            var new_value = current_value + (avg-current_value) * lerp_power;
+
+            // Create pixel with new alpha value, then set
+            current_pixel.a = new_value;
+            imgDataObj.setPixel(x, y, current_pixel);
+        });
+    });
     
 
     agents.forEach(agent => {
