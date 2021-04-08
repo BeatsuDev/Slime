@@ -19,6 +19,7 @@ function Agent(x, y, angle) {
     this.x = x;
     this.y = y;
     this.angle = angle;
+    this.color = {r:255,g:255,b:255,a:255};
     
     this.newAngle = function() {
         this.angle = Math.random() * 2 * Math.PI;

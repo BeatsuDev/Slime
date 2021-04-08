@@ -73,8 +73,7 @@ function render() {
         }
 
         // Draw agent
-        var whitePixel = {r:255,g:255,b:255,a:255};
-        imgDataObj.setPixel(agent.x, agent.y, whitePixel);
+        imgDataObj.setPixel(agent.x, agent.y, agent.color);
     });
     ctx.putImageData(imgDataObj, 0, 0);
     requestAnimationFrame(render);
