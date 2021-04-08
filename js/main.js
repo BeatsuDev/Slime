@@ -40,13 +40,12 @@ ImageData.prototype.getAdjacent = function(x, y) {
     return adjacent;
 }
 
-function setPixel(imgDataObj, x, y, pixel) {
-    var offset = (Math.ceil(imgDataObj.width*y) + Math.ceil(x))*4;
-    imgDataObj.data[offset+0] = pixel.r;
-    imgDataObj.data[offset+1] = pixel.g;
-    imgDataObj.data[offset+2] = pixel.b;
-    imgDataObj.data[offset+3] = pixel.a;
-    return imgDataObj;
+ImageData.prototype.setPixel = function(x, y, pixel) {
+    var offset = (this.width*Math.ceil(y) + Math.ceil(x))*4;
+    this.data[offset+0] = pixel.r;
+    this.data[offset+1] = pixel.g;
+    this.data[offset+2] = pixel.b;
+    this.data[offset+3] = pixel.a;
 }
 
 function render() {
@@ -65,17 +64,17 @@ function render() {
 
         // Change angle on collision with canvas border
         if (agent.x < 0 || agent.x > canvasSize.width) {
-            agent.x = min([ canvasSize.width-0.01, max([ 0, agent.x ]) ]);
+            agent.x = min([ canvasSize.width-1, max([ 0, agent.x ]) ]);
             agent.newAngle();
         }
         if (agent.y < 0 || agent.y > canvasSize.height) {
-            agent.y = min([ canvasSize.height-0.01, max([ 0, agent.y ]) ]);
+            agent.y = min([ canvasSize.height-1, max([ 0, agent.y ]) ]);
             agent.newAngle();
         }
 
         // Draw agent
         var whitePixel = {r:255,g:255,b:255,a:255};
-        imgDataObj = setPixel(imgDataObj, agent.x, agent.y, whitePixel);
+        imgDataObj.setPixel(agent.x, agent.y, whitePixel);
     });
     ctx.putImageData(imgDataObj, 0, 0);
     requestAnimationFrame(render);

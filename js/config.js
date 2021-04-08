@@ -1,6 +1,6 @@
-let width = 1080;
+let width = 320;
 const canvasSize = {width: Math.floor( 16/9 * width ), height: width};
 const config = {
-    numAgents: 5000,
+    numAgents: 200,
     moveSpeed: 1
 }
