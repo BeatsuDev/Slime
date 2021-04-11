@@ -11,33 +11,13 @@ for (let num = 0; num < numAgents; num++) {
 }
 
 ImageData.prototype.getPixel = function(x, y) {
-    var offset = ((this.width)*(y-1) + x)*4;
+    var offset = (this.width*Math.ceil(y) + Math.ceil(x))*4;
     return {
         r: this.data[offset+0],
         g: this.data[offset+1],
         b: this.data[offset+2],
         a: this.data[offset+3]
     }
-}
-
-ImageData.prototype.getAdjacent = function(x, y) {
-    var adjacent = [];
-
-    range(-1, 2).forEach(i => {
-        range(-1, 2).forEach(j => {
-            var adjacentCol = x + i;
-            var adjacentRow = y + j;
-
-            var valid = true;
-
-            if (i == 0 && j == 0) valid = false;
-            if (adjacentCol < 0 || adjacentCol >= this.width) valid = false; 
-            else if (adjacentRow < 0 || adjacentRow >= this.height) valid = false;
-
-            if (valid) adjacent.push( this.getPixel(adjacentRow, adjacentCol) );
-        });            
-    });
-    return adjacent;
 }
 
 ImageData.prototype.setPixel = function(x, y, pixel) {
@@ -48,6 +28,31 @@ ImageData.prototype.setPixel = function(x, y, pixel) {
     this.data[offset+3] = pixel.a;
 }
 
+ImageData.prototype.getAdjacent = function(x, y) {
+    var adjacent = [];
+
+    range(-1, 2).forEach(i => {
+        range(-1, 2).forEach(j => {
+            var di = x + i;
+            var dj = y + j;
+
+            if (dj == di && dj == 0) return
+            if (di >= 0 && di < this.width && dj >= 0 && dj < this.height) {
+                adjacent.push(this.getPixel(di, dj));
+            }
+        });
+    });
+    return adjacent;
+}
+
+function lerp(a, b, t) {
+    return a + (b-a) * t;
+}
+
+function color(r,g,b,a) {
+    return {r:r,g:g,b:b,a:a};
+}
+
 function render() {
     // ImageData
     var imgDataObj = ctx.getImageData(0, 0, canvasSize.width, canvasSize.height);
@@ -56,20 +61,34 @@ function render() {
     range(0, imgDataObj.width).forEach(x => {
         range(0, imgDataObj.height).forEach(y => {
             var current_pixel = imgDataObj.getPixel(x, y);
-            var current_value = current_pixel.a;
             var surrounding = imgDataObj.getAdjacent(x, y);
 
-            // Get average Alpha-channel of all surrounding points
-            var avg = sum( surrounding.map(pixel => pixel.a) ) /
-                      surrounding.map(pixel => pixel.a).length;
+            
+            // Simulate blur - Average the values to the adjacent values
+            var blurredPixel = color(0,0,0,0);
+            var diffusedPixel = color(0,0,0,0);
+            var diffusedAndEvaporatedPixel = color(0,0,0,0);
 
-            // Linear Interpolation? Perhaps? Is this correct?
-            var lerp_power = 0.5;
-            var new_value = current_value + (avg-current_value) * lerp_power;
+            var divider = surrounding.length;
+            surrounding.map(pixel => {
+                blurredPixel.r += pixel.r/divider;
+                blurredPixel.g += pixel.g/divider;
+                blurredPixel.b += pixel.b/divider;
+                blurredPixel.a += pixel.a/divider;
+            });
 
-            // Create pixel with new alpha value, then set
-            current_pixel.a = new_value;
-            imgDataObj.setPixel(x, y, current_pixel);
+            diffusedPixel.r = lerp(current_pixel.r, blurredPixel.r, config.diffuseSpeed);
+            diffusedPixel.g = lerp(current_pixel.g, blurredPixel.g, config.diffuseSpeed);
+            diffusedPixel.b = lerp(current_pixel.b, blurredPixel.b, config.diffuseSpeed);
+            diffusedPixel.a = lerp(current_pixel.a, blurredPixel.a, config.diffuseSpeed);
+
+            diffusedAndEvaporatedPixel.r = max(0, diffusedPixel.r - config.evaporateSpeed);
+            diffusedAndEvaporatedPixel.g = max(0, diffusedPixel.g - config.evaporateSpeed);
+            diffusedAndEvaporatedPixel.b = max(0, diffusedPixel.b - config.evaporateSpeed);
+            diffusedAndEvaporatedPixel.a = max(0, diffusedPixel.a - config.evaporateSpeed);
+
+
+            imgDataObj.setPixel(x, y, diffusedAndEvaporatedPixel);
         });
     });
     

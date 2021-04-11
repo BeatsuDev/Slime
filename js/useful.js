@@ -15,12 +15,12 @@ function sum(iterator) {
     return iterator.reduce((total, t) => total+t);
 }
 
-function max(iterator) {
-	return iterator.reduce((acc, cur) => acc<cur? cur: acc);
+function max(...args) {
+	return args.reduce((acc, cur) => acc<cur? cur: acc);
 }
 
-function min(iterator) {
-	return iterator.reduce((acc, cur) => acc>cur? cur: acc);
+function min(...args) {
+	return args.reduce((acc, cur) => acc>cur? cur: acc);
 }
 
 function shuffle(arr) {
@@ -47,10 +47,6 @@ function rgb() {
 	return `rgb(${randint(0, 256)}, ${randint(0, 256)}, ${randint(0, 256)})`;
 }
 
-function color() {
-	return rgb();
-}
-
 function hsl() {
 	return `hsl(${randint(0, 361)}, 100, 50)`;
 }
@@ -66,7 +62,6 @@ var random = {
 	randint: randint,
 	random: random,
 	choice: choice,
-	color: color,
 	rgb: rgb,
 	hsl: hsl
 }
