@@ -12,12 +12,12 @@ for (let num = 0; num < numAgents; num++) {
 
 ImageData.prototype.getPixel = function(x, y) {
     var offset = (this.width*Math.ceil(y) + Math.ceil(x))*4;
-    return {
-        r: this.data[offset+0],
-        g: this.data[offset+1],
-        b: this.data[offset+2],
-        a: this.data[offset+3]
-    }
+    return new Pixel(
+        this.data[offset+0],
+        this.data[offset+1],
+        this.data[offset+2],
+        this.data[offset+3]
+    );
 }
 
 ImageData.prototype.setPixel = function(x, y, pixel) {
@@ -46,16 +46,19 @@ ImageData.prototype.getAdjacent = function(x, y) {
 }
 
 function lerp(a, b, t) {
-    return a + (b-a) * t;
+    return a.add( b.subtract(a) ).multiply(t, true);
 }
 
-function color(r,g,b,a) {
-    return {r:r,g:g,b:b,a:a};
-}
+
 
 function render() {
     // ImageData
     var imgDataObj = ctx.getImageData(0, 0, canvasSize.width, canvasSize.height);
+
+    // Create new ImageData to put new values into after calculating diffuse.
+    // This is to avoid read AND write to the same ImageData object and letting non-updated pixels
+    // interfering with updated pixels
+    var imgDataObjCopy = new ImageData(imgDataObj.width, imgDataObj.height);
 
     // Diffuse values
     range(0, imgDataObj.width).forEach(x => {
@@ -65,22 +68,17 @@ function render() {
 
             
             // Simulate blur - Average the values to the adjacent values
-            var blurredPixel = color(0,0,0,0);
-            var diffusedPixel = color(0,0,0,0);
-            var diffusedAndEvaporatedPixel = color(0,0,0,0);
+            var blurredPixel = new Pixel(0,0,0,0);
+            var diffusedPixel = new Pixel(0,0,0,0);
+            var diffusedAndEvaporatedPixel = new Pixel(0,0,0,0);
 
             var divider = surrounding.length;
-            surrounding.map(pixel => {
-                blurredPixel.r += pixel.r/divider;
-                blurredPixel.g += pixel.g/divider;
-                blurredPixel.b += pixel.b/divider;
-                blurredPixel.a += pixel.a/divider;
+            surrounding.forEach( pixel => {
+                pixelDividedByLength = pixel.divide(divider, true);
+                blurredPixel = blurredPixel.add(pixelDividedByLength);
             });
-
-            diffusedPixel.r = lerp(current_pixel.r, blurredPixel.r, config.diffuseSpeed);
-            diffusedPixel.g = lerp(current_pixel.g, blurredPixel.g, config.diffuseSpeed);
-            diffusedPixel.b = lerp(current_pixel.b, blurredPixel.b, config.diffuseSpeed);
-            diffusedPixel.a = lerp(current_pixel.a, blurredPixel.a, config.diffuseSpeed);
+            // diffusedPixel = lerp(current_pixel, blurredPixel, config.diffuseSpeed);
+            diffusedPixel = blurredPixel;
 
             diffusedAndEvaporatedPixel.r = max(0, diffusedPixel.r - config.evaporateSpeed);
             diffusedAndEvaporatedPixel.g = max(0, diffusedPixel.g - config.evaporateSpeed);
@@ -88,22 +86,57 @@ function render() {
             diffusedAndEvaporatedPixel.a = max(0, diffusedPixel.a - config.evaporateSpeed);
 
 
-            imgDataObj.setPixel(x, y, diffusedAndEvaporatedPixel);
+            imgDataObjCopy.setPixel(x, y, diffusedAndEvaporatedPixel);
         });
     });
+
+    imgDataObj = imgDataObjCopy;
     
 
+    var i = 0;
     agents.forEach(agent => {
+        i+=1;
         // Move agent
         agent.move(speed);
 
+        // ---------------------
+        // Now follow the trails!
+        // ---------------------
+        var {left, straight, right} = getPixelsFromAngle(imgDataObj, agent.angle, agent.x, agent.y);
+
+
+
+        if (!left || !right) {
+            // Do nothing
+        }
+
+        else if (straight > left && straight > right) {
+            // Continue same direction so do nothing
+        }
+
+        else if (straight < left && straight < right) {
+            // Turn randomly
+            // Between -5 and 5 degrees
+            agent.angle += rad( (Math.random()-0.5)*10 )
+        }
+        else if (left.a > right.a) {
+            // Turn left
+            agent.angle += rad(5);
+        }
+
+        else if (left.a < right.a) {
+            // Turn right
+            agent.angle -= rad(5);
+        }
+
+
         // Change angle on collision with canvas border
         if (agent.x < 0 || agent.x > canvasSize.width) {
-            agent.x = min([ canvasSize.width-1, max([ 0, agent.x ]) ]);
+            agent.x = min( canvasSize.width-1, max( 0, agent.x ) );
             agent.newAngle();
         }
         if (agent.y < 0 || agent.y > canvasSize.height) {
-            agent.y = min([ canvasSize.height-1, max([ 0, agent.y ]) ]);
+            agent.y = min( canvasSize.height-1, max( 0, agent.y ) );
             agent.newAngle();
         }
 

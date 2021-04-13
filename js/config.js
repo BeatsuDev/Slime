@@ -1,8 +1,8 @@
-let width = 64;
-const canvasSize = {width: Math.floor( 16/9 * width ), height: width};
+let width = 144;
+const canvasSize = {width: width, height: Math.floor( width * 9/16 )};
 const config = {
-    numAgents: 50,
-    moveSpeed: 1,
+    numAgents: 250,
+    moveSpeed: 2,
     diffuseSpeed: 1,
-    evaporateSpeed: 1
+    evaporateSpeed: 2
 }
