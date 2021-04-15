@@ -41,7 +41,7 @@ ImageData.prototype.getAdjacent = function(x, y) {
 }
 
 function setPixel(imgDataObj, x, y, pixel) {
-    var offset = (Math.ceil(imgDataObj.width*y) + Math.ceil(x))*4;
+    var offset = (imgDataObj.width*Math.ceil(y) + Math.ceil(x))*4;
     imgDataObj.data[offset+0] = pixel.r;
     imgDataObj.data[offset+1] = pixel.g;
     imgDataObj.data[offset+2] = pixel.b;
